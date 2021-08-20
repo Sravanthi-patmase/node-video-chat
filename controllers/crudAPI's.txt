@@ -1,0 +1,95 @@
+//CRUD OPERATION WITH NODEJS
+
+//Create EMP 
+URL : localhost:4000/api/
+Method : POST
+Body : {
+    "name":"alex",
+    "age":"66",
+    "address":"Austin",
+    "email":"alex@g.com",
+    "mobile":"78787887"
+}
+Response : {
+    "_id": "60dc41026afea841ecc4dea4",
+    "name": "alex",
+    "age": 66,
+    "email": "alex@g.com",
+    "mobile": "78787887",
+    "address": "Austin",
+    "createdAt": "2021-06-30T10:01:38.127Z",
+    "updatedAt": "2021-06-30T10:01:38.127Z",
+    "__v": 0
+}
+
+//Get All Emp Details
+URL : localhost:4000/api/
+Method : Get
+Response : [
+    {
+        "_id": "60dc3ac0996de6423867a2a5",
+        "name": "xyz",
+        "age": 23,
+        "email": "xyz@g.com",
+        "mobile": "343434343",
+        "address": "USA",
+        "createdAt": "2021-06-30T09:34:56.467Z",
+        "updatedAt": "2021-06-30T09:34:56.467Z",
+        "__v": 0
+    },
+    {
+        "_id": "60dc41026afea841ecc4dea4",
+        "name": "alex",
+        "age": 66,
+        "email": "alex@g.com",
+        "mobile": "78787887",
+        "address": "Austin",
+        "createdAt": "2021-06-30T10:01:38.127Z",
+        "updatedAt": "2021-06-30T10:01:38.127Z",
+        "__v": 0
+    }
+]
+
+//Get Particular Emp Details
+URL : localhost:4000/api/60dc3ac0996de6423867a2a5
+Method : Get
+Response : {
+    "_id": "60dc3ac0996de6423867a2a5",
+    "name": "xyz",
+    "age": 23,
+    "email": "xyz@g.com",
+    "mobile": "343434343",
+    "address": "USA",
+    "createdAt": "2021-06-30T09:34:56.467Z",
+    "updatedAt": "2021-06-30T09:34:56.467Z",
+    "__v": 0
+}
+
+//Update Particular Emp Details
+URL : localhost:4000/api/60dc41026afea841ecc4dea4
+Method : PUT
+Body : {
+    "name":"alexa",
+    "age":"66",
+    "address":"Austin-alexa",
+    "email":"alex@g.com",
+    "mobile":"78787887"
+}
+Response : {
+    "_id": "60dc41026afea841ecc4dea4",
+    "name": "alexa",
+    "age": 66,
+    "email": "alex@g.com",
+    "mobile": "78787887",
+    "address": "Austin-alexa",
+    "createdAt": "2021-06-30T10:01:38.127Z",
+    "updatedAt": "2021-06-30T10:07:21.129Z",
+    "__v": 0
+}
+
+//Delete Particular EMP Details
+URL : localhost:4000/api/60dc3ac0996de6423867a2a5
+Method : Delete
+Response : {
+    "message": "user deleted successfully!"
+}
