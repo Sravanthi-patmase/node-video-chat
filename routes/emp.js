@@ -18,6 +18,7 @@ router.post('/fetch', userController.fetchOnCondition);
 
 //login with basic auth
 // router.get('/login/:id', auth.encode,  userController.login);
+
 router.post('/login', auth.encode1, userController.login);
 //username: superadmin@htc.com
 //password: SuperAdmin

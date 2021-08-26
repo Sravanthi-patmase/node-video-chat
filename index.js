@@ -89,12 +89,37 @@ mongo.connect('mongodb://localhost:27017/',{
   if (err) throw err;
   global.io.on('connection', socket => {
     console.log('Some client conneced');
+    // video chat related events
+    socket.on('room_join_request', payload => {
+      console.log('DDDD',payload)
+      socket.join(payload.roomName, err => {
+          if (!err) {
+              io.in(payload.roomName).clients((err, clients) => {
+                console.log('room_users')
+                  if (!err) {
+                      io.in(payload.roomName).emit('room_users', clients)
+                  }
+              });
+          }
+      })
+    });
+    socket.on('offer_signal', payload => {
+      io.to(payload.calleeId).emit('offer', { signalData: payload.signalData, callerId: payload.callerId });
+    });
+
+    socket.on('answer_signal', payload => {
+        io.to(payload.callerId).emit('answer', { signalData: payload.signalData, calleeId: socket.id });
+    });
+
+    socket.on('disconnect', () => {
+        io.emit('room_left', { type: 'disconnected', socketId: socket.id })
+    })
+    // video chat related events
     var db1 = db.db('crudAPIs');
     db1.collection('chats', (err, collection) => {
       if (err) throw err;
       collection.find().toArray((err, items) => {
         if (err) throw err;
-        console.log(items, '????');
         socket.emit('output', items);
         socket.on('input', data => {
           console.log(data,'Data')
