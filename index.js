@@ -113,7 +113,27 @@ mongo.connect('mongodb://localhost:27017/',{
 
     socket.on('disconnect', () => {
         io.emit('room_left', { type: 'disconnected', socketId: socket.id })
-    })
+    });
+
+    socket.on("joinRoom", (data) => {
+      var roomId= data.roomId;
+      var userId = data.userId;
+      var userName = data.userName;
+      console.log('joinroon',roomId, userId, userName)
+      var total = io.engine.clientsCount;
+      // console.log(total,'NoOfClinets');
+        socket.join(roomId);  
+        socket.to(roomId).emit("userConnected", userId);//broadcast all the users in room including sender
+        socket.on("message", (message) => {
+          io.to(roomId).emit("createMessage", message, userName);
+        });
+      socket.on('disconnect', () => {
+        var total = io.engine.clientsCount;
+        console.log(total,'totalAfterDisconccted');
+        console.log("disconnected")
+        socket.broadcast.emit('user-disconnected', userId)
+      })
+    });
     // video chat related events
     var db1 = db.db('crudAPIs');
     db1.collection('chats', (err, collection) => {
