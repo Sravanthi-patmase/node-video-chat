@@ -8,8 +8,11 @@ router.get('/', userController.findAll);
 router.post('/',auth.decode, userController.create);
 // Retrieve a single user with id
 router.get('/:id', userController.findOne);
+router.put('/updateMeetingId', userController.updateMeetingId);
 // Update a user with id
 router.put('/:id',auth.decode, userController.update);
+// update meeting Id after login
+
 // Delete a user with id
 router.delete('/:id', auth.decode, userController.delete);
 

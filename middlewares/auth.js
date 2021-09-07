@@ -51,6 +51,7 @@ exports.encode1 = async (req, res, next) => {
 }
 
 exports.decode = async(req, res, next) => {
+    console.log('decode')
     if (!req.headers['authorization']) {
         return res.status(400).json({ success: false, message: 'No access token provided' });
     }

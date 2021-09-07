@@ -27,6 +27,9 @@ const EmpSchema = mongoose.Schema({
         type: String,
         required: true
     },
+    meetingId: {
+        type: String,
+    }
 }, {
     timestamps: true
 });

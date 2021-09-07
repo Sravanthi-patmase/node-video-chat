@@ -53,6 +53,7 @@ http.listen(port, () => {
 });
 
 const empRoutes = require('./routes/emp');
+const { chatMsg } = require('./controllers/emp');
 
 app.use((req, res, next) => {
   res.append('Access-Control-Allow-Origin', ['*']);
@@ -67,6 +68,7 @@ app.use((req, res, next) => {
   }
   next();
 });
+console.log('1')
 app.use('/api', empRoutes);
 app.get("/createRoom", (req, res) => {
   console.log('GGGGGG')
@@ -82,58 +84,65 @@ app.get("/:room", (req, res) => {
 // });
 
 mongo.connect('mongodb://localhost:27017/',{
-  useNewUrlParser: true,
-  useUnifiedTopology: true 
+    useNewUrlParser: true,
+    useUnifiedTopology: true 
   }, function(err, db) {
     console.log('YYY')
   if (err) throw err;
   global.io.on('connection', socket => {
     console.log('Some client conneced');
     // video chat related events
-    socket.on('room_join_request', payload => {
-      console.log('DDDD',payload)
-      socket.join(payload.roomName, err => {
-          if (!err) {
-              io.in(payload.roomName).clients((err, clients) => {
-                console.log('room_users')
-                  if (!err) {
-                      io.in(payload.roomName).emit('room_users', clients)
-                  }
-              });
-          }
-      })
-    });
-    socket.on('offer_signal', payload => {
-      io.to(payload.calleeId).emit('offer', { signalData: payload.signalData, callerId: payload.callerId });
-    });
-
-    socket.on('answer_signal', payload => {
-        io.to(payload.callerId).emit('answer', { signalData: payload.signalData, calleeId: socket.id });
-    });
 
     socket.on('disconnect', () => {
+      console.log('disonncted',socket.id)
         io.emit('room_left', { type: 'disconnected', socketId: socket.id })
     });
 
     socket.on("joinRoom", (data) => {
+      console.log(data,'DATAAAAAAAA')
       var roomId= data.roomId;
       var userId = data.userId;
       var userName = data.userName;
-      console.log('joinroon',roomId, userId, userName)
       var total = io.engine.clientsCount;
-      // console.log(total,'NoOfClinets');
         socket.join(roomId);  
-        socket.to(roomId).emit("userConnected", userId);//broadcast all the users in room including sender
-        socket.on("message", (message) => {
-          io.to(roomId).emit("createMessage", message, userName);
+        socket.to(roomId).emit("userConnected", userId); //broadcast all the users in room including sender
+        socket.on("message", (msgData) => {
+          var message = msgData.msg;
+          var userName = msgData.name;
+          chat(message,userName,roomId);
         });
-      socket.on('disconnect', () => {
-        var total = io.engine.clientsCount;
-        console.log(total,'totalAfterDisconccted');
-        console.log("disconnected")
-        socket.broadcast.emit('user-disconnected', userId)
-      })
+        socket.on('disconnect', () => {
+          var total = io.engine.clientsCount;
+          console.log(total,'totalAfterDisconccted');
+          console.log("disconnected");
+          socket.broadcast.emit('user-disconnected', userId)
+        });
     });
+
+    function chat(msg,name,roomId){
+      var db1 = db.db('crudAPIs');
+      db1.collection('chats', (err, collection) => {
+        if (err) throw err;
+        collection.find().toArray((err, items) => {
+          if (err) throw err;
+            if (name == '' || msg == '') {
+              sendStatus('Please enter name and msg');
+            } else {
+              collection.insertOne({ name: name, msg: msg }, () => {
+                sendStatus({
+                  msg: 'Message sent',
+                  clear: true
+                });
+              });
+              collection.find().toArray((err, items) => {
+                if (err) throw err;
+                io.to(roomId).emit("output", items);
+              });
+            }
+        });
+      });
+    }
+
     // video chat related events
     var db1 = db.db('crudAPIs');
     db1.collection('chats', (err, collection) => {
@@ -141,19 +150,16 @@ mongo.connect('mongodb://localhost:27017/',{
       collection.find().toArray((err, items) => {
         if (err) throw err;
         socket.emit('output', items);
+        console.log(items,"chatData");
         socket.on('input', data => {
           console.log(data,'Data')
           let name = data.name;
           let msg = data.msg;
-          //check for msg and name
           if (name == '' || msg == '') {
-            //send error status
             sendStatus('Please enter name and msg');
           } else {
-            //insert msg into db
             collection.insertOne({ name: name, msg: msg }, () => {
               // io.emit('output', [data]);
-              // send status obj
               sendStatus({
                 msg: 'Message sent',
                 clear: true
@@ -161,21 +167,17 @@ mongo.connect('mongodb://localhost:27017/',{
             });
           }
         });
-        // handle clear btn
-            socket.on('clear', data => {
-              //remove all chats from collection
-              collection.deleteMany({}, () => {
-                //emit cleared
-                console.log("Cleared");
-                socket.emit('cleared');
-              });
-            });
+        socket.on('clear', data => {
+          collection.deleteMany({}, () => {
+            console.log("Cleared");
+            socket.emit('cleared');
+          });
+        });
       });
     });
-    // create function to send status
-        sendStatus = s => {
-          socket.emit('status', s);
-        };
+    sendStatus = s => {
+      socket.emit('status', s);
+    };
   });
 });
 

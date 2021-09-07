@@ -108,6 +108,32 @@ exports.create = (req, res) => {
     res.status(500).send({message: "You are not authorized to add an employee"});
   }
 };
+//Update meetingId after logging in
+exports.updateMeetingId = (req,res) => {
+  console.log(req.body,'SSS')
+  User.find({$or:[{ email: req.body.email },{ role: req.body.role }]}).then( user => {
+    console.log(user,'USERID',user[0].id)
+    if(user.length < 1) {
+      return res.status(404).send({
+        message: "Either Email or Mobile doesnot exists." 
+      });
+    }else{
+        User.findByIdAndUpdate(user[0].id, {
+          meetingId: req.body.meetingId,
+      },{new: true}).then(user => {
+        if(!user) {
+          return res.status(404).send({ message: "user not found with id " + req.params.id });
+        }
+        res.send(user);
+      }).catch(err => {
+        if(err.kind === 'ObjectId') {
+          return res.status(404).send({ message: "user not found with id " + req.params.id });
+        }
+        return res.status(500).send({ message: "Error updating user with id " + req.params.id });
+      });
+    }
+  });
+};
 
 // Update a User identified by the id in the request
 exports.update = (req, res) => {
