@@ -1,32 +1,21 @@
 const mongoose = require('mongoose');
 
 const EmpSchema = mongoose.Schema({
-    name:  {
+    username:  {
         type: String,
         required: true
     },
-    age: {
-        type: Number,
+    password: {
+        type: String,
         required: true
     },
     email: {
         type: String,
         required: true
     },
-    mobile: {
+    meetingId: {
         type: String,
-        required: true
-    },
-    address:  String, 
-    project: {
-        type: String,
-        enum: ["ABC", "DX Mgmt Talent Pool"],
-        required: true
-    },
-    role: {
-        type: String,
-        required: true
-    },
+    }
 }, {
     timestamps: true
 });
