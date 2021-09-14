@@ -55,38 +55,19 @@ app.use((req, res, next) => {
 });
 app.use('/api', empRoutes);
 
-mongo.connect('mongodb://localhost:27017/videoChat',{
+mongo.connect('mongodb://localhost:27017',{
     useNewUrlParser: true,
     useUnifiedTopology: true 
   }, function(err, db) {
   if (err) throw err;
   global.io.on('connection', socket => {
     console.log('Some client conneced');
-    socket.on('disconnect', () => {
-      console.log('disonncted',socket.id)
-        io.emit('room_left', { type: 'disconnected', socketId: socket.id })
-    });
     var db1 = db.db('videoChat');
     db1.collection('chats', (err, collection) => {
       if (err) throw err;
       collection.find().toArray((err, items) => {
         if (err) throw err;
         socket.emit('output', items);
-        console.log('items',items);
-        socket.on('input', data => {
-          let name = data.name;
-          let msg = data.msg;
-          if (name == '' || msg == '') {
-            sendStatus('Please enter name and msg');
-          } else {
-            collection.insertOne({ name: name, msg: msg,createdAt: new Date() }, () => {
-              sendStatus({
-                msg: 'Message sent',
-                clear: true
-              });
-            });
-          }
-        });
         socket.on('clear', data => {
           collection.deleteMany({}, () => {
             socket.emit('cleared');
@@ -94,17 +75,19 @@ mongo.connect('mongodb://localhost:27017/videoChat',{
         });
       });
     });
+    socket.on('disconnect', () => {
+      console.log('disonncted',socket.id)
+        io.emit('room_left', { type: 'disconnected', socketId: socket.id })
+    });
     socket.on("joinRoom", (data) => {
-      console.log('SRRRRRRRRRR',data)
+      console.log(data,'data');
       var roomId= data.roomId;
       var userId = data.userId;
       var userName = data.userName;
       var total = io.engine.clientsCount;
       socket.join(roomId);  
       socket.to(roomId).emit("userConnected", userId); //broadcast all the users in room including sender
-      console.log('userconnected event ')
       socket.on("message", (msgData) => {
-        console.log("message",msgData);
         var message = msgData.msg;
         var userName = msgData.name;
         chat(message,userName,roomId);

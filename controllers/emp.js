@@ -45,6 +45,33 @@ exports.login = async (req, res) => {
     throw error;
   }
 };
+exports.updateActiveStatus = async(req, res) => {
+  try{
+    User.find({$or:[{ email: req.body.email }]}).then( user => {
+      if(user.length < 1) {
+        return res.status(404).send({
+          message: "Email doesnot exists." 
+        });
+      }else{
+          User.findByIdAndUpdate(user[0].id, {
+            isActive: req.body.isActive,
+        },{new: true}).then(user => {
+          if(!user) {
+            return res.status(404).send({ message: "user not found with id " + req.params.id });
+          }
+          res.send(user);
+        }).catch(err => {
+          if(err.kind === 'ObjectId') {
+            return res.status(404).send({ message: "user not found with id " + req.params.id });
+          }
+          return res.status(500).send({ message: "Error updating user with id " + req.params.id });
+        });
+      }
+    });
+  }catch(error){
+    throw error;
+  }
+}
 exports.updateMeetingId = async(req, res) => {
   console.log(req.body,'bodyupdatememeintg')
   User.find({$or:[{ email: req.body.email },{ password: req.body.password }]}).then( user => {

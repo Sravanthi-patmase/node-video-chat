@@ -12,7 +12,8 @@
     "mongoose": "^5.13.0",
     "nodemon": "^2.0.8",
     "socket.io": "^4.1.2",
-    "uuid": "^8.3.2"
+    "uuid": "^8.3.2",
+    "mongodb": "^2.2.33"
   },
   "scripts": {
     "start": "nodemon server/index.js",
