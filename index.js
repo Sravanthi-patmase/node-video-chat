@@ -68,6 +68,10 @@ mongo.connect('mongodb://localhost:27017',{
       collection.find().toArray((err, items) => {
         if (err) throw err;
         socket.emit('output', items);
+        // socket.on('output',(data,callBack) => {
+        //   console.log('!!!!!!!!!',items)
+        //   io.sockets.emit('output',items);
+        // });
         socket.on('clear', data => {
           collection.deleteMany({}, () => {
             socket.emit('cleared');
