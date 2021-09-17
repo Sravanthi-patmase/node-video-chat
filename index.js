@@ -12,6 +12,7 @@ app.use(express.urlencoded({ extended: true }))
 app.use(express.json())
 const mongoose = require('mongoose');
 const authDecode = require('./middlewares/auth');
+const controller = require('./controllers/emp');
 const http = require("http").createServer(app);
 global.io = require("socket.io")(http);
 const empRoutes = require('./routes/emp');
@@ -38,8 +39,6 @@ http.listen(port, () => {
    console.log(`Node server is listening on port ${port}`);
 });
 
-const { chatMsg } = require('./controllers/emp');
-
 app.use((req, res, next) => {
   res.append('Access-Control-Allow-Origin', ['*']);
   res.append('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE');
@@ -54,11 +53,11 @@ app.use((req, res, next) => {
   next();
 });
 app.use('/api', empRoutes);
-
+var roomDetails = "";
 mongo.connect('mongodb://localhost:27017',{
     useNewUrlParser: true,
     useUnifiedTopology: true 
-  }, function(err, db) {
+  }, async function(err, db) {
   if (err) throw err;
   global.io.on('connection', socket => {
     console.log('Some client conneced');
@@ -68,10 +67,6 @@ mongo.connect('mongodb://localhost:27017',{
       collection.find().toArray((err, items) => {
         if (err) throw err;
         socket.emit('output', items);
-        // socket.on('output',(data,callBack) => {
-        //   console.log('!!!!!!!!!',items)
-        //   io.sockets.emit('output',items);
-        // });
         socket.on('clear', data => {
           collection.deleteMany({}, () => {
             socket.emit('cleared');
@@ -79,18 +74,25 @@ mongo.connect('mongodb://localhost:27017',{
         });
       });
     });
-    socket.on('disconnect', () => {
-      console.log('disonncted',socket.id)
-        io.emit('room_left', { type: 'disconnected', socketId: socket.id })
+    socket.on('disconnect', (userId) => {
+      console.log('disonncted',socket.id,userId)
+        io.emit('room_left', { type: 'disconnected', socketId: socket.id });
+
     });
-    socket.on("joinRoom", (data) => {
-      console.log(data,'data');
+    socket.on("joinRoom", async (data) => {
+      await controller.createRoom(data);
       var roomId= data.roomId;
       var userId = data.userId;
       var userName = data.userName;
       var total = io.engine.clientsCount;
-      socket.join(roomId);  
-      socket.to(roomId).emit("userConnected", userId); //broadcast all the users in room including sender
+      socket.join(roomId);
+      db1.collection('rooms', async (err, collection) => {
+        if (err) throw err;
+        collection.find({roomId: roomId}).toArray().then((resData) => {
+          roomDetails = resData;
+          socket.to(roomId).emit("userConnected", { userId: userId, roomDetails: roomDetails}); //broadcast all the users in room including sender
+        });
+      }); 
       socket.on("message", (msgData) => {
         var message = msgData.msg;
         var userName = msgData.name;
@@ -102,32 +104,31 @@ mongo.connect('mongodb://localhost:27017',{
       });
     });
 
-    function chat(msg,name,roomId) {
+    async function chat(msg,name,roomId) {
       var db1 = db.db('videoChat');
-      db1.collection('chats', (err, collection) => {
+      db1.collection('chats', async (err, collection) => {
         if (err) throw err;
-        collection.find().toArray((err, items) => {
+        collection.find().toArray( async (err, items) => {
           if (err) throw err;
             if (name == '' || msg == '') {
-              sendStatus('Please enter name and msg');
+              // sendStatus('Please enter name and msg');
             } else {
-              collection.insertOne({ name: name, msg: msg,createdAt: new Date() }, () => {
-                sendStatus({
-                  msg: 'Message sent',
-                  clear: true
-                });
-              });
-              collection.find().toArray((err, items) => {
-                if (err) throw err;
-                io.to(roomId).emit("output", items);
-              });
+              let res = await collection.insertOne({ name: name, msg: msg,createdAt: new Date() });
+              if(res){
+                let items = await collection.find().toArray();
+                if(items.length > 0){
+                  io.to(roomId).emit("output", items);
+                }
+              }
+              
+              // collection.find().toArray((err, items) => {
+              //   if (err) throw err;
+              //   io.to(roomId).emit("output", items);
+              // });
             }
         });
       });
     }
-    sendStatus = s => {
-      socket.emit('status', s);
-    };
   });
 });
 
