@@ -17,8 +17,19 @@ const http = require("http").createServer(app);
 global.io = require("socket.io")(http);
 const empRoutes = require('./routes/emp');
 
+//*********************** */
+// const { MongoClient } = require('mongodb');
+// const uri = "mongodb+srv://mean-video-chat:<Sravanthi21>@cluster0.inzp0.mongodb.net/myFirstDatabase?retryWrites=true&w=majority";
+// const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true });
+// client.connect(err => {
+//   const collection = client.db("test").collection("devices");
+//   client.close();
+// });
+//*********************** */
+
 mongoose.Promise = global.Promise;
-mongoose.connect('mongodb://localhost:27017/videoChat', {
+// mongoose.connect('mongodb+srv://mean-video-chat:<Sravanthi21>@cluster0.inzp0.mongodb.net/VideoChat?retryWrites=true&w=majority', {
+  mongoose.connect('mongodb://localhost:27017',{
 useNewUrlParser: true,
 useUnifiedTopology: true 
 }).then(() => {
