@@ -12,12 +12,23 @@ app.use(express.urlencoded({ extended: true }))
 app.use(express.json())
 const mongoose = require('mongoose');
 const authDecode = require('./middlewares/auth');
+const controller = require('./controllers/emp');
 const http = require("http").createServer(app);
 global.io = require("socket.io")(http);
 const empRoutes = require('./routes/emp');
 
+//*********************** */
+// const { MongoClient } = require('mongodb');
+// const uri = "mongodb+srv://mean-video-chat:<Sravanthi21>@cluster0.inzp0.mongodb.net/myFirstDatabase?retryWrites=true&w=majority";
+// const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true });
+// client.connect(err => {
+//   const collection = client.db("test").collection("devices");
+//   client.close();
+// });
+//*********************** */
+
 mongoose.Promise = global.Promise;
-mongoose.connect('mongodb://localhost:27017/videoChat', {
+mongoose.connect('mongodb+srv://mean-video-chat:<Sravanthi21>@cluster0.inzp0.mongodb.net/VideoChat?retryWrites=true&w=majority', {
 useNewUrlParser: true,
 useUnifiedTopology: true 
 }).then(() => {
@@ -38,8 +49,6 @@ http.listen(port, () => {
    console.log(`Node server is listening on port ${port}`);
 });
 
-const { chatMsg } = require('./controllers/emp');
-
 app.use((req, res, next) => {
   res.append('Access-Control-Allow-Origin', ['*']);
   res.append('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE');
@@ -54,8 +63,8 @@ app.use((req, res, next) => {
   next();
 });
 app.use('/api', empRoutes);
-
-mongo.connect('mongodb://localhost:27017',{
+var roomDetails = "";
+mongo.connect('mongodb+srv://mean-video-chat:<Sravanthi21>@cluster0.inzp0.mongodb.net/VideoChat?retryWrites=true&w=majority',{
     useNewUrlParser: true,
     useUnifiedTopology: true 
   }, function(err, db) {
@@ -68,10 +77,6 @@ mongo.connect('mongodb://localhost:27017',{
       collection.find().toArray((err, items) => {
         if (err) throw err;
         socket.emit('output', items);
-        // socket.on('output',(data,callBack) => {
-        //   console.log('!!!!!!!!!',items)
-        //   io.sockets.emit('output',items);
-        // });
         socket.on('clear', data => {
           collection.deleteMany({}, () => {
             socket.emit('cleared');
@@ -79,18 +84,27 @@ mongo.connect('mongodb://localhost:27017',{
         });
       });
     });
-    socket.on('disconnect', () => {
-      console.log('disonncted',socket.id)
-        io.emit('room_left', { type: 'disconnected', socketId: socket.id })
+    socket.on('disconnect', (userId) => {
+      console.log('disonncted',socket.id,userId)
+        io.emit('room_left', { type: 'disconnected', socketId: socket.id });
+
     });
-    socket.on("joinRoom", (data) => {
+    socket.on("joinRoom", async (data) => {
       console.log(data,'data');
+      await controller.createRoom(data);
       var roomId= data.roomId;
       var userId = data.userId;
       var userName = data.userName;
       var total = io.engine.clientsCount;
-      socket.join(roomId);  
-      socket.to(roomId).emit("userConnected", userId); //broadcast all the users in room including sender
+      socket.join(roomId); 
+      db1.collection('rooms', async (err, collection) => {
+        if (err) throw err;
+        collection.find({roomId: roomId}).toArray().then((resData) => {
+          console.log(resData,'res')
+          roomDetails = resData;
+          socket.to(roomId).emit("userConnected", { userId: userId, roomDetails: roomDetails}); //broadcast all the users in room including sender
+        });
+      }); 
       socket.on("message", (msgData) => {
         var message = msgData.msg;
         var userName = msgData.name;
