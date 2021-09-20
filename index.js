@@ -72,7 +72,7 @@ app.use((req, res, next) => {
   next();
 });
 app.use('/api', empRoutes);
-// app.use(requireHTTPS);
+app.use(requireHTTPS);
 
 var roomDetails = "";
 // mongo.connect('mongodb://localhost:27017',{
