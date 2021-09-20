@@ -26,10 +26,10 @@ const empRoutes = require('./routes/emp');
 //   client.close();
 // });
 //*********************** */
-
+const { chatMsg } = require('./controllers/emp');
 mongoose.Promise = global.Promise;
-// mongoose.connect('mongodb+srv://mean-video-chat:<Sravanthi21>@cluster0.inzp0.mongodb.net/VideoChat?retryWrites=true&w=majority', {
-  mongoose.connect('mongodb://localhost:27017',{
+mongoose.connect('mongodb+srv://mean-video-chat:<Sravanthi21>@cluster0.inzp0.mongodb.net/VideoChat?retryWrites=true&w=majority', {
+  // mongoose.connect('mongodb://localhost:27017/videoChat',{
 useNewUrlParser: true,
 useUnifiedTopology: true 
 }).then(() => {
@@ -41,7 +41,7 @@ useUnifiedTopology: true
 
 app.get('/', (req, res) => {
   res.json({"message": "Hello World"});
-  res.setHeader('Access-Control-Allow-Origin', 'http://localhost:8080');
+  // res.setHeader('Access-Control-Allow-Origin', 'http://localhost:8080');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, PATCH, DELETE');
   res.setHeader('Access-Control-Allow-Headers', 'X-Requested-With,content-type');
   res.setHeader('Access-Control-Allow-Credentials', true);
@@ -65,7 +65,8 @@ app.use((req, res, next) => {
 });
 app.use('/api', empRoutes);
 var roomDetails = "";
-mongo.connect('mongodb://localhost:27017',{
+// mongo.connect('mongodb://localhost:27017',{
+mongoose.connect('mongodb+srv://mean-video-chat:<Sravanthi21>@cluster0.inzp0.mongodb.net/VideoChat?retryWrites=true&w=majority', {
     useNewUrlParser: true,
     useUnifiedTopology: true 
   }, async function(err, db) {

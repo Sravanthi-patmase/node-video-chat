@@ -75,7 +75,7 @@ exports.createRoom =  async (req, res)  => {
   // });
 };
 exports.login = async (req, res) => {
-  console.log('SSSSSSSSSSSSSS')
+  console.log('SSSSSSSSSSSSSS',req.body)
   try {
       const userPassword = await User.findOne({password: req.body.password,email: req.body.email});
       console.log(userPassword,'userData')
