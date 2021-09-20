@@ -127,7 +127,7 @@ var roomDetails = "";
     });
 
     async function chat(msg,name,roomId) {
-      var db1 = db.db('videoChat');
+      var db1 = db.db('VideoChat');
       db1.collection('chats', async (err, collection) => {
         if (err) throw err;
         collection.find().toArray( async (err, items) => {
