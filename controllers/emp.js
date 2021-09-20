@@ -5,7 +5,8 @@ const Room = require('../models/room');
 exports.create = (req, res) => {
   console.log("RRRRRRRRRRRRRRRRRRRRRR",req.body)
     if(!req.body) {
-      return res.status(400).send({ message: "Please fill all required field" });
+      // return res.status(400).send({ message: "Please fill all required field" });
+      return res.send({Success:false, message: "Please fill all required field"});
     }
     validateBody(req.body);
     const userData = new User({
@@ -17,15 +18,14 @@ exports.create = (req, res) => {
     User.find({ email: req.body.email }).then( user => {
       console.log(user)
       if(user.length >= 1) {
-        return res.status(404).send({
-          message: "Email already exists." 
-        });
+        return res.send({Success:false, message: "Email already exists."});
       }else{
         userData.save().then(data => {
           console.log(data,'inserted');
-          res.send(data);
+          return res.send({Success: true, message: "Success",data: data});
           }).catch(err => {
-            res.status(500).send({message: err.message || "Something went wrong while creating new user."});
+            return res.send({Success:false, message: "Something went wrong while creating new user."});
+            // res.status(500).send({message: err.message || "Something went wrong while creating new user."});
         });
       }
     });
