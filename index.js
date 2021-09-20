@@ -9,13 +9,21 @@ const app = express();
 var router = express.Router();
 const port = process.env.PORT || 8080;
 app.use(express.urlencoded({ extended: true }))
-app.use(express.json())
+app.use(express.json());
+app.use(requireHTTPS);
 const mongoose = require('mongoose');
 const authDecode = require('./middlewares/auth');
 const controller = require('./controllers/emp');
 const http = require("http").createServer(app);
 global.io = require("socket.io")(http);
 const empRoutes = require('./routes/emp');
+function requireHTTPS(req, res, next) {
+  // The 'x-forwarded-proto' check is for Heroku
+  if (!req.secure && req.get('x-forwarded-proto') !== 'https') {
+      return res.redirect('https://' + req.get('host') + req.url);
+  }
+  next();
+}
 
 //*********************** */
 // const { MongoClient } = require('mongodb');
