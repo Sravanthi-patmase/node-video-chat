@@ -10,7 +10,6 @@ var router = express.Router();
 const port = process.env.PORT || 8080;
 app.use(express.urlencoded({ extended: true }))
 app.use(express.json());
-app.use(requireHTTPS);
 const mongoose = require('mongoose');
 const authDecode = require('./middlewares/auth');
 const controller = require('./controllers/emp');
@@ -36,7 +35,7 @@ function requireHTTPS(req, res, next) {
 //*********************** */
 const { chatMsg } = require('./controllers/emp');
 mongoose.Promise = global.Promise;
-mongoose.connect('mongodb+srv://mean-video-chat:<Sravanthi21>@cluster0.inzp0.mongodb.net/VideoChat?retryWrites=true&w=majority', {
+mongoose.connect('mongodb+srv://mean-video-chat:Sravanthi21@cluster0.inzp0.mongodb.net/VideoChat?retryWrites=true&w=majority', {
   // mongoose.connect('mongodb://localhost:27017/videoChat',{
 useNewUrlParser: true,
 useUnifiedTopology: true 
@@ -50,7 +49,7 @@ useUnifiedTopology: true
 app.get('/', (req, res) => {
   res.json({"message": "Hello World"});
   // res.setHeader('Access-Control-Allow-Origin', 'http://localhost:8080');
-  res.setHeader('Access-Control-Allow-Origin', 'mongodb+srv://mean-video-chat:<Sravanthi21>@cluster0.inzp0.mongodb.net/VideoChat?retryWrites=true&w=majority');
+  res.setHeader('Access-Control-Allow-Origin', 'mongodb+srv://mean-video-chat:Sravanthi21@cluster0.inzp0.mongodb.net/VideoChat?retryWrites=true&w=majority');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, PATCH, DELETE');
   res.setHeader('Access-Control-Allow-Headers', 'X-Requested-With,content-type');
   res.setHeader('Access-Control-Allow-Credentials', true);
@@ -73,16 +72,18 @@ app.use((req, res, next) => {
   next();
 });
 app.use('/api', empRoutes);
+// app.use(requireHTTPS);
+
 var roomDetails = "";
 // mongo.connect('mongodb://localhost:27017',{
-mongoose.connect('mongodb+srv://mean-video-chat:<Sravanthi21>@cluster0.inzp0.mongodb.net/VideoChat?retryWrites=true&w=majority', {
+  mongo.connect('mongodb+srv://mean-video-chat:Sravanthi21@cluster0.inzp0.mongodb.net?retryWrites=true&w=majority', {
     useNewUrlParser: true,
     useUnifiedTopology: true 
   }, async function(err, db) {
   if (err) throw err;
   global.io.on('connection', socket => {
     console.log('Some client conneced');
-    var db1 = db.db('videoChat');
+    var db1 = db.db('VideoChat');
     db1.collection('chats', (err, collection) => {
       if (err) throw err;
       collection.find().toArray((err, items) => {
@@ -141,7 +142,6 @@ mongoose.connect('mongodb+srv://mean-video-chat:<Sravanthi21>@cluster0.inzp0.mon
                   io.to(roomId).emit("output", items);
                 }
               }
-              
               // collection.find().toArray((err, items) => {
               //   if (err) throw err;
               //   io.to(roomId).emit("output", items);
