@@ -84,22 +84,9 @@ var roomDetails = "";
   global.io.on('connection', socket => {
     console.log('Some client conneced');
     var db1 = db.db('VideoChat');
-    db1.collection('chats', (err, collection) => {
-      if (err) throw err;
-      collection.find().toArray((err, items) => {
-        if (err) throw err;
-        socket.emit('output', items);
-        socket.on('clear', data => {
-          collection.deleteMany({}, () => {
-            socket.emit('cleared');
-          });
-        });
-      });
-    });
     socket.on('disconnect', (userId) => {
       console.log('disonncted',socket.id,userId)
         io.emit('room_left', { type: 'disconnected', socketId: socket.id });
-
     });
     socket.on("joinRoom", async (data) => {
       await controller.createRoom(data);
@@ -108,17 +95,32 @@ var roomDetails = "";
       var userName = data.userName;
       var total = io.engine.clientsCount;
       socket.join(roomId);
+      // socket.to(roomId).broadcast.emit('user-connected', userId, username);
+      db1.collection('chats', (err, collection) => {
+        if (err) throw err;
+        collection.find({meetingId: roomId}).toArray((err, items) => {
+          if (err) throw err;
+          io.to(roomId).emit("output", items);
+          socket.on('clear', data => {
+            collection.deleteMany({meetingId: data.meetingId }, () => {
+              socket.emit('cleared');
+            });
+          });
+        });
+      });
       db1.collection('rooms', async (err, collection) => {
         if (err) throw err;
         collection.find({roomId: roomId}).toArray().then((resData) => {
           roomDetails = resData;
-          socket.to(roomId).emit("userConnected", { userId: userId, roomDetails: roomDetails}); //broadcast all the users in room including sender
+          console.log('userConnected',data.userName)
+          socket.to(roomId).emit("userConnected", { userId: userId, roomDetails: roomDetails, userName: userName}); //broadcast all the users in room including sender
         });
       }); 
       socket.on("message", (msgData) => {
         var message = msgData.msg;
         var userName = msgData.name;
-        chat(message,userName,roomId);
+        var meetingId = msgData.meetingId;
+        chat(message,userName,roomId,meetingId);
       });
       socket.on('disconnect', () => {
         var total = io.engine.clientsCount;
@@ -126,7 +128,7 @@ var roomDetails = "";
       });
     });
 
-    async function chat(msg,name,roomId) {
+    async function chat(msg,name,roomId,meetingId) {
       var db1 = db.db('VideoChat');
       db1.collection('chats', async (err, collection) => {
         if (err) throw err;
@@ -135,17 +137,13 @@ var roomDetails = "";
             if (name == '' || msg == '') {
               // sendStatus('Please enter name and msg');
             } else {
-              let res = await collection.insertOne({ name: name, msg: msg,createdAt: new Date() });
+              let res = await collection.insertOne({ name: name, msg: msg,createdAt: new Date(), meetingId: meetingId });
               if(res){
-                let items = await collection.find().toArray();
+                let items = await collection.find({meetingId: meetingId}).toArray();
                 if(items.length > 0){
                   io.to(roomId).emit("output", items);
                 }
               }
-              // collection.find().toArray((err, items) => {
-              //   if (err) throw err;
-              //   io.to(roomId).emit("output", items);
-              // });
             }
         });
       });
