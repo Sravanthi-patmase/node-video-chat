@@ -84,10 +84,6 @@ var roomDetails = "";
   global.io.on('connection', socket => {
     console.log('Some client conneced');
     var db1 = db.db('VideoChat');
-    socket.on('disconnect', (userId) => {
-      console.log('disonncted',socket.id,userId)
-        io.emit('room_left', { type: 'disconnected', socketId: socket.id });
-    });
     socket.on("joinRoom", async (data) => {
       await controller.createRoom(data);
       var roomId= data.roomId;
@@ -122,9 +118,10 @@ var roomDetails = "";
         var meetingId = msgData.meetingId;
         chat(message,userName,roomId,meetingId);
       });
-      socket.on('disconnect', () => {
-        var total = io.engine.clientsCount;
-        socket.broadcast.emit('user-disconnected', userId)
+      socket.on('disconnect', (userId) => {
+        socket.broadcast.emit('userDisconnected', userId);
+        console.log('disonncted',socket.id,userId);
+        io.to(roomId).emit("disconnected", userId);
       });
     });
 
