@@ -121,7 +121,11 @@ var roomDetails = "";
       socket.on('disconnect', (reason) => {
         socket.broadcast.emit('userDisconnected', userId);
         console.log('disonncted',socket.id,userId,reason);
-        io.to(roomId).emit("disconnected", userId);
+        // io.to(roomId).emit("disconnected", userId);
+      });
+      socket.on('leave', (data) => {
+        socket.broadcast.emit('userDisconnected', data.peerId);
+        // io.to(roomId).emit("disconnected", userId);
       });
     });
 
