@@ -118,9 +118,9 @@ var roomDetails = "";
         var meetingId = msgData.meetingId;
         chat(message,userName,roomId,meetingId);
       });
-      socket.on('disconnect', (userId) => {
+      socket.on('disconnect', (reason) => {
         socket.broadcast.emit('userDisconnected', userId);
-        console.log('disonncted',socket.id,userId);
+        console.log('disonncted',socket.id,userId,reason);
         io.to(roomId).emit("disconnected", userId);
       });
     });
