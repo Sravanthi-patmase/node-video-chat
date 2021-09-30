@@ -85,7 +85,7 @@ var roomDetails = "";
     console.log('Some client conneced');
     var db1 = db.db('VideoChat');
     socket.on("joinRoom", async (data) => {
-      await controller.createRoom(data);
+      // await controller.createRoom(data);
       var roomId= data.roomId;
       var userId = data.userId;
       var userName = data.userName;
@@ -104,14 +104,17 @@ var roomDetails = "";
           });
         });
       });
-      db1.collection('rooms', async (err, collection) => {
+          // console.log('userConnected',data.userName)
+          // socket.to(roomId).emit("userConnected", { userId: userId, roomDetails: roomDetails, userName: userName}); //broadcast all the users in room including sender
+      db1.collection('participantsList', async (err, collection) => {
         if (err) throw err;
-        collection.find({roomId: roomId}).toArray().then((resData) => {
-          roomDetails = resData;
-          console.log('userConnected',data.userName)
-          socket.to(roomId).emit("userConnected", { userId: userId, roomDetails: roomDetails, userName: userName}); //broadcast all the users in room including sender
-        });
-      }); 
+          var msgData = userName + " joined the Room";
+          let res = await collection.insertOne({ roomId: roomId, msg: msgData, createdAt: new Date() });
+          if(res){
+            console.log('userConnected',data.userName)
+            socket.to(roomId).emit("userConnected", { userId: userId, roomDetails: roomDetails, userName: userName});
+        }
+      });
       socket.on("message", (msgData) => {
         var message = msgData.msg;
         var userName = msgData.name;
@@ -119,13 +122,35 @@ var roomDetails = "";
         chat(message,userName,roomId,meetingId);
       });
       socket.on('disconnect', (reason) => {
-        socket.broadcast.emit('userDisconnected', userId);
+        db1.collection('participantsList', async (err, collection) => {
+          if (err) throw err;
+            var msgData = userName + " left the Room";
+            let res = await collection.insertOne({ roomId: roomId, msg: msgData, createdAt: new Date() });
+            if(res){
+              io.to(roomId).emit("userDisconnected", {userId: userId, userName: userName});
+          }
+        });
         console.log('disonncted',socket.id,userId,reason);
-        // io.to(roomId).emit("disconnected", userId);
       });
       socket.on('leave', (data) => {
-        socket.broadcast.emit('userDisconnected', data.peerId);
-        // io.to(roomId).emit("disconnected", userId);
+        db1.collection('participantsList', async (err, collection) => {
+          if (err) throw err;
+            var msgData = userName + " left the Room";
+            let res = await collection.insertOne({ roomId: roomId, msg: msgData, createdAt: new Date() });
+            if(res){
+              io.to(roomId).emit("userDisconnected", {userId: data.peerId, userName: userName});
+          }
+        });
+      });
+      socket.on('showParticipants', (data, response) => {
+        console.log("xxxxxx",userId)
+        db1.collection('participantsList', async (err, collection) => {
+          if (err) throw err;
+          collection.find({roomId: data.meetingId}).sort({ createdAt: -1 }).toArray().then((resData) => {
+            console.log(resData,'RRRRRR')
+            socket.broadcast.to(userId).emit("showParticipants", resData); //broadcast all the users in room including sender
+          });
+        });
       });
     });
 
@@ -136,7 +161,6 @@ var roomDetails = "";
         collection.find().toArray( async (err, items) => {
           if (err) throw err;
             if (name == '' || msg == '') {
-              // sendStatus('Please enter name and msg');
             } else {
               let res = await collection.insertOne({ name: name, msg: msg,createdAt: new Date(), meetingId: meetingId });
               if(res){
@@ -149,6 +173,16 @@ var roomDetails = "";
         });
       });
     }
+    // async function deleteUserFromRoom(peerId) {
+    //   db1.collection('rooms', async (err, collection) => {
+    //     if (err) throw err;
+    //     collection.find({roomId: roomId}).toArray().then((resData) => {
+    //       roomDetails = resData;
+    //       console.log('userConnected',data.userName)
+    //       socket.to(roomId).emit("userConnected", { userId: userId, roomDetails: roomDetails, userName: userName}); //broadcast all the users in room including sender
+    //     });
+    //   }); 
+    // }
   });
 });
 
