@@ -153,7 +153,7 @@ mongo.connect('mongodb+srv://mean-video-chat:Sravanthi21@cluster0.inzp0.mongodb.
           // let res = await collection.findOneAndUpdate( { roomId: roomId }, { $push: { "roomData" :{ msgData: msgData, insertedAt: new Date(), isActive: 0 }} } );
           // let res = await collection.insertOne({ roomId: roomId, msg: msgData, createdAt: new Date(), isActive: 0 });
           if (res) {
-            io.to(roomId).emit("userDisconnected", { userId: userId, userName: userName });
+            socket.to(roomId).emit("userDisconnected", { userId: userId, userName: userName });
             notifyRoomDetails(data).then(function (resp) {
               socket.to(roomId).emit("showParticipants", resp);
               console.log('userConnected', data.userName, '%%%%', resp);
@@ -168,7 +168,7 @@ mongo.connect('mongodb+srv://mean-video-chat:Sravanthi21@cluster0.inzp0.mongodb.
           var msgData = userName + " left the Room";
           res = await collection.findOneAndUpdate({ roomId: roomId, "roomData.userId": userId }, { $set: { "roomData.$.msgData": msgData, "roomData.$.insertedAt": new Date(), "roomData.$.isActive": 0 } });
           if (res) {
-            io.to(roomId).emit("userDisconnected", { userId: data.peerId, userName: userName });
+            socket.to(roomId).emit("userDisconnected", { userId: data.peerId, userName: userName });
             notifyRoomDetails(data).then(function (resp) {
               socket.to(roomId).emit("showParticipants", resp);
               // console.log('userConnected', data.userName, '%%%%', resp);
