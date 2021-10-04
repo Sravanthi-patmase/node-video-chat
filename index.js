@@ -99,14 +99,13 @@ mongo.connect('mongodb+srv://mean-video-chat:Sravanthi21@cluster0.inzp0.mongodb.
           if (err) throw err;
           io.to(roomId).emit("output", items);
           socket.on('clear', data => {
-            console.log(data.meetingId)
             collection.deleteMany({ meetingId: data.meetingId }, () => {
               socket.emit('cleared');
             });
             db1.collection("participantsList", async (err, collection) => {
-              collection.deleteMany({ meetingId: data.meetingId }, () => {
+              collection.deleteMany({ roomId: data.meetingId }, () => {
                 console.log("room deleted Successfully");
-              })
+              });
             })
           });
         });
@@ -146,35 +145,28 @@ mongo.connect('mongodb+srv://mean-video-chat:Sravanthi21@cluster0.inzp0.mongodb.
         var meetingId = msgData.meetingId;
         chat(message, userName, roomId, meetingId);
       });
-      socket.on('disconnect', async (reason) => {
-        console.log("EEEEEEEEEEEEEEEEE");
+      socket.on('disconnect', async () => {
         socket.to(roomId).emit("userDisconnected", { userId: userId, userName: userName });
         db1.collection('participantsList', async (err, collection) => {
           if (err) throw err;
           var msgData = userName + " left the Room";
           res = await collection.findOneAndUpdate({ roomId: roomId, "roomData.userId": userId }, { $set: { "roomData.$.msgData": msgData, "roomData.$.insertedAt": new Date(), "roomData.$.isActive": 0 } });
-          // let res = await collection.findOneAndUpdate( { roomId: roomId }, { $push: { "roomData" :{ msgData: msgData, insertedAt: new Date(), isActive: 0 }} } );
-          // let res = await collection.insertOne({ roomId: roomId, msg: msgData, createdAt: new Date(), isActive: 0 });
           if (res) {
-            console.log(res,'YYY')
             notifyRoomDetails(data).then(function (resp) {
               socket.to(roomId).emit("showParticipants", resp);
             });
           }
         });
-        // console.log('disonncted', socket.id, userId, reason);
       });
       socket.on('leave', async (data) => {
-        console.log("AAAAAAAAAAAAA")
         db1.collection('participantsList', async (err, collection) => {
           if (err) throw err;
           var msgData = userName + " left the Room";
           res = await collection.findOneAndUpdate({ roomId: roomId, "roomData.userId": userId }, { $set: { "roomData.$.msgData": msgData, "roomData.$.insertedAt": new Date(), "roomData.$.isActive": 0 } });
           if (res) {
-            socket.to(roomId).emit("userDisconnected", { userId: data.peerId, userName: userName });
+            socket.to(data.meetingId).emit("userDisconnected", { userId: data.peerId, userName: userName });
             notifyRoomDetails(data).then(function (resp) {
               socket.to(roomId).emit("showParticipants", resp);
-              // console.log('userConnected', data.userName, '%%%%', resp);
             });
           }
         });
@@ -204,7 +196,6 @@ mongo.connect('mongodb+srv://mean-video-chat:Sravanthi21@cluster0.inzp0.mongodb.
         });
       });
     }
-
 
     function notifyRoomDetails(data, callback) {
       return new Promise((resolve, reject) => {
