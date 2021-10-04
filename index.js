@@ -99,6 +99,7 @@ mongo.connect('mongodb+srv://mean-video-chat:Sravanthi21@cluster0.inzp0.mongodb.
           if (err) throw err;
           io.to(roomId).emit("output", items);
           socket.on('clear', data => {
+            console.log(data.meetingId)
             collection.deleteMany({ meetingId: data.meetingId }, () => {
               socket.emit('cleared');
             });
@@ -146,6 +147,8 @@ mongo.connect('mongodb+srv://mean-video-chat:Sravanthi21@cluster0.inzp0.mongodb.
         chat(message, userName, roomId, meetingId);
       });
       socket.on('disconnect', async (reason) => {
+        console.log("EEEEEEEEEEEEEEEEE");
+        socket.to(roomId).emit("userDisconnected", { userId: userId, userName: userName });
         db1.collection('participantsList', async (err, collection) => {
           if (err) throw err;
           var msgData = userName + " left the Room";
@@ -153,22 +156,22 @@ mongo.connect('mongodb+srv://mean-video-chat:Sravanthi21@cluster0.inzp0.mongodb.
           // let res = await collection.findOneAndUpdate( { roomId: roomId }, { $push: { "roomData" :{ msgData: msgData, insertedAt: new Date(), isActive: 0 }} } );
           // let res = await collection.insertOne({ roomId: roomId, msg: msgData, createdAt: new Date(), isActive: 0 });
           if (res) {
-            io.to(roomId).emit("userDisconnected", { userId: userId, userName: userName });
+            console.log(res,'YYY')
             notifyRoomDetails(data).then(function (resp) {
               socket.to(roomId).emit("showParticipants", resp);
-              console.log('userConnected', data.userName, '%%%%', resp);
             });
           }
         });
         // console.log('disonncted', socket.id, userId, reason);
       });
       socket.on('leave', async (data) => {
+        console.log("AAAAAAAAAAAAA")
         db1.collection('participantsList', async (err, collection) => {
           if (err) throw err;
           var msgData = userName + " left the Room";
           res = await collection.findOneAndUpdate({ roomId: roomId, "roomData.userId": userId }, { $set: { "roomData.$.msgData": msgData, "roomData.$.insertedAt": new Date(), "roomData.$.isActive": 0 } });
           if (res) {
-            io.to(roomId).emit("userDisconnected", { userId: data.peerId, userName: userName });
+            socket.to(roomId).emit("userDisconnected", { userId: data.peerId, userName: userName });
             notifyRoomDetails(data).then(function (resp) {
               socket.to(roomId).emit("showParticipants", resp);
               // console.log('userConnected', data.userName, '%%%%', resp);
