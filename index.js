@@ -189,7 +189,7 @@ mongo.connect('mongodb+srv://mean-video-chat:Sravanthi21@cluster0.inzp0.mongodb.
             if (res) {
               let items = await collection.find({ meetingId: meetingId }).toArray();
               if (items.length > 0) {
-                io.to(roomId).emit("output", items);
+                socket.to(roomId).emit("output", items);
               }
             }
           }
