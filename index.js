@@ -97,7 +97,7 @@ mongo.connect('mongodb+srv://mean-video-chat:Sravanthi21@cluster0.inzp0.mongodb.
         if (err) throw err;
         collection.find({ meetingId: roomId }).toArray((err, items) => {
           if (err) throw err;
-          io.to(roomId).emit("output", items);
+          // io.to(roomId).emit("output", items);
           socket.on('clear', data => {
             collection.deleteMany({ meetingId: data.meetingId }, () => {
               socket.emit('cleared');
