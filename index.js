@@ -175,6 +175,12 @@ mongo.connect('mongodb+srv://mean-video-chat:Sravanthi21@cluster0.inzp0.mongodb.
         var response = await notifyRoomDetails(data);
         io.to(socket.id).emit("showParticipants", response); //broadcast all the users in room including sender
       });
+      socket.on('muteAll', async (data) => {
+        socket.to(roomId).emit("muteAll");
+      });
+      socket.on('unMuteAll', async (data) => {
+        socket.to(roomId).emit("unMuteAll");
+      });
     });
 
     async function chat(msg, name, roomId, meetingId) {
