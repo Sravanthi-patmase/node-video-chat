@@ -106,7 +106,8 @@ mongo.connect('mongodb+srv://mean-video-chat:Sravanthi21@cluster0.inzp0.mongodb.
               collection.deleteMany({ roomId: data.meetingId }, () => {
                 console.log("room deleted Successfully");
               });
-            })
+            });
+            socket.to(roomId).emit("meetingClosed", { roomId: roomId });
           });
         });
       });
@@ -164,7 +165,9 @@ mongo.connect('mongodb+srv://mean-video-chat:Sravanthi21@cluster0.inzp0.mongodb.
           var msgData = userName + " left the Room";
           res = await collection.findOneAndUpdate({ roomId: roomId, "roomData.userId": userId }, { $set: { "roomData.$.msgData": msgData, "roomData.$.insertedAt": new Date(), "roomData.$.isActive": 0 } });
           if (res) {
-            socket.to(data.meetingId).emit("userDisconnected", { userId: data.peerId, userName: userName });
+            if(data.isHost !== '1'){
+              socket.to(data.meetingId).emit("userDisconnected", { userId: data.peerId, userName: userName });
+            }
             notifyRoomDetails(data).then(function (resp) {
               socket.to(roomId).emit("showParticipants", resp);
             });
