@@ -12,7 +12,8 @@ exports.create = (req, res) => {
     const userData = new User({
       username: req.body.username,
       email: req.body.email,
-      password: req.body.password
+      password: req.body.password,
+      meetingId: req.body.meetingId
     });
     console.log(userData,'userData')
     User.find({ email: req.body.email }).then( user => {

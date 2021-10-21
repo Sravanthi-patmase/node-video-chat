@@ -93,28 +93,11 @@ mongo.connect('mongodb+srv://mean-video-chat:Sravanthi21@cluster0.inzp0.mongodb.
       var total = io.engine.clientsCount;
       socket.join(roomId);
       // socket.to(roomId).broadcast.emit('user-connected', userId, username);
-      db1.collection('chats', (err, collection) => {
-        if (err) throw err;
-        collection.find({ meetingId: roomId }).toArray((err, items) => {
-          if (err) throw err;
-          // io.to(roomId).emit("output", items);
-          socket.on('clear', data => {
-            collection.deleteMany({ meetingId: data.meetingId }, () => {
-              socket.emit('cleared');
-            });
-            db1.collection("participantsList", async (err, collection) => {
-              collection.deleteMany({ roomId: data.meetingId }, () => {
-                console.log("room deleted Successfully");
-              });
-            });
-            socket.to(roomId).emit("meetingClosed", { roomId: roomId });
-          });
-        });
-      });
       db1.collection('participantsList', async (err, collection) => {
         if (err) throw err;
         var msgData = userName + " joined the Room";
         var res = "";
+        socket.to(roomId).emit("userConnected", { userId: userId, userName: userName });
         collection.find({ roomId: roomId }).toArray(async (err, items) => {
           if (items.length >= 1) {
             collection.find({ roomId: roomId, "roomData.userId": userId }).toArray(async (err, items) => {
@@ -123,7 +106,7 @@ mongo.connect('mongodb+srv://mean-video-chat:Sravanthi21@cluster0.inzp0.mongodb.
               } else {
                 res = await collection.findOneAndUpdate({ roomId: roomId }, { $push: { "roomData": { userId: userId, userName: userName, msgData: msgData, insertedAt: new Date(), isActive: 1 } } }, { upsert: true })
               }
-              socket.to(roomId).emit("userConnected", { userId: userId, userName: userName });
+              // socket.to(roomId).emit("userConnected", { userId: userId, userName: userName });
               notifyRoomDetails(data).then(function (resp) {
                 socket.to(roomId).emit("showParticipants", resp);
                 io.to(socket.id).emit("showParticipants", resp);
@@ -131,7 +114,7 @@ mongo.connect('mongodb+srv://mean-video-chat:Sravanthi21@cluster0.inzp0.mongodb.
             });
           } else {
             res = await collection.insertOne({ roomId: roomId, "roomData": [{ msgData: msgData, insertedAt: new Date(), isActive: 1, userId: userId, userName: userName }], createdAt: new Date(), updatedAt: new Date() });
-            socket.to(roomId).emit("userConnected", { userId: userId, userName: userName });
+            // socket.to(roomId).emit("userConnected", { userId: userId, userName: userName });
             notifyRoomDetails(data).then(function (resp) {
               socket.to(roomId).emit("showParticipants", resp);
               io.to(socket.id).emit("showParticipants", resp);
@@ -139,6 +122,27 @@ mongo.connect('mongodb+srv://mean-video-chat:Sravanthi21@cluster0.inzp0.mongodb.
           }
         });
       });
+      // db1.collection('chats', (err, collection) => {
+      //   if (err) throw err;
+      //   collection.find({ meetingId: roomId }).toArray((err, items) => {
+      //     if (err) throw err;
+          // io.to(roomId).emit("output", items);
+          socket.on('clear', data => {
+            db1.collection('chats', (err, collection) => {
+              if (err) throw err;
+              collection.deleteMany({ meetingId: data.meetingId }, () => {
+                socket.emit('cleared');
+              });
+            });
+            db1.collection("participantsList", async (err, collection) => {
+              collection.deleteMany({ roomId: data.meetingId }, () => {
+                console.log("room deleted Successfully");
+              });
+            });
+            // socket.to(roomId).emit("meetingClosed", { roomId: roomId });
+          });
+      //   });
+      // });
 
       socket.on("message", (msgData) => {
         var message = msgData.msg;
