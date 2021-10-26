@@ -188,6 +188,12 @@ mongo.connect('mongodb+srv://mean-video-chat:Sravanthi21@cluster0.inzp0.mongodb.
       socket.on('unMuteAll', async (data) => {
         socket.to(roomId).emit("unMuteAll");
       });
+      socket.on('shareScreen', async (data) => {
+        socket.to(roomId).emit('shareScreen',data);
+      });
+      socket.on('stopShareScreen', async (data) => {
+        socket.to(roomId).emit('stopShareScreen',data);
+      })
     });
 
     async function chat(msg, name, roomId, meetingId) {
