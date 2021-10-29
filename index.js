@@ -36,7 +36,6 @@ function requireHTTPS(req, res, next) {
 const { chatMsg } = require('./controllers/emp');
 mongoose.Promise = global.Promise;
 mongoose.connect('mongodb+srv://mean-video-chat:Sravanthi21@cluster0.inzp0.mongodb.net/VideoChat?retryWrites=true&w=majority', {
-  // mongoose.connect('mongodb://localhost:27017/videoChat',{
   useNewUrlParser: true,
   useUnifiedTopology: true
 }).then(() => {
@@ -74,7 +73,6 @@ app.use((req, res, next) => {
 app.use('/api', empRoutes);
 app.use(requireHTTPS);
 
-var roomDetails = "";
 // mongo.connect('mongodb://localhost:27017',{
 mongo.connect('mongodb+srv://mean-video-chat:Sravanthi21@cluster0.inzp0.mongodb.net?retryWrites=true&w=majority', {
   useNewUrlParser: true,
@@ -85,13 +83,18 @@ mongo.connect('mongodb+srv://mean-video-chat:Sravanthi21@cluster0.inzp0.mongodb.
     console.log('Some client conneced');
     var db1 = db.db('VideoChat');
     socket.on("joinRoom", async (data) => {
-      // await controller.createRoom(data);
       var roomId = data.roomId;
       data.meetingId = data.roomId;
       var userId = data.userId;
       var userName = data.userName;
       var total = io.engine.clientsCount;
       socket.join(roomId);
+      db1.collection('chats', async (err, collection) => {
+        let items = await collection.find({ meetingId: roomId }).sort({ createdAt: 1 }).toArray();
+        if (items.length > 0) {
+          socket.emit("output", items);
+        }
+      });
       // socket.to(roomId).broadcast.emit('user-connected', userId, username);
       db1.collection('participantsList', async (err, collection) => {
         if (err) throw err;
@@ -104,7 +107,7 @@ mongo.connect('mongodb+srv://mean-video-chat:Sravanthi21@cluster0.inzp0.mongodb.
               if (items.length >= 1) {
                 res = await collection.findOneAndUpdate({ roomId: roomId, "roomData.userId": userId }, { $set: { "roomData.$.msgData": msgData, "roomData.$.insertedAt": new Date(), "roomData.$.isActive": 1 } }, { upsert: true });
               } else {
-                res = await collection.findOneAndUpdate({ roomId: roomId }, { $push: { "roomData": { userId: userId, userName: userName, msgData: msgData, insertedAt: new Date(), isActive: 1 } } }, { upsert: true })
+                res = await collection.findOneAndUpdate({ roomId: roomId }, { $push: { "roomData": { userId: userId, socketId: socket.id, userName: userName, msgData: msgData, insertedAt: new Date(), isActive: 1 } } }, { upsert: true })
               }
               // socket.to(roomId).emit("userConnected", { userId: userId, userName: userName });
               notifyRoomDetails(data).then(function (resp) {
@@ -113,7 +116,7 @@ mongo.connect('mongodb+srv://mean-video-chat:Sravanthi21@cluster0.inzp0.mongodb.
               });
             });
           } else {
-            res = await collection.insertOne({ roomId: roomId, "roomData": [{ msgData: msgData, insertedAt: new Date(), isActive: 1, userId: userId, userName: userName }], createdAt: new Date(), updatedAt: new Date() });
+            res = await collection.insertOne({ roomId: roomId, "roomData": [{ msgData: msgData, insertedAt: new Date(), isActive: 1, userId: userId,socketId: socket.id, userName: userName }], createdAt: new Date(), updatedAt: new Date() });
             // socket.to(roomId).emit("userConnected", { userId: userId, userName: userName });
             notifyRoomDetails(data).then(function (resp) {
               socket.to(roomId).emit("showParticipants", resp);
@@ -127,20 +130,24 @@ mongo.connect('mongodb+srv://mean-video-chat:Sravanthi21@cluster0.inzp0.mongodb.
       //   collection.find({ meetingId: roomId }).toArray((err, items) => {
       //     if (err) throw err;
           // io.to(roomId).emit("output", items);
-          socket.on('clear', data => {
-            db1.collection('chats', (err, collection) => {
-              if (err) throw err;
-              collection.deleteMany({ meetingId: data.meetingId }, () => {
-                socket.emit('cleared');
-              });
-            });
-            db1.collection("participantsList", async (err, collection) => {
-              collection.deleteMany({ roomId: data.meetingId }, () => {
-                console.log("room deleted Successfully");
-              });
-            });
-            // socket.to(roomId).emit("meetingClosed", { roomId: roomId });
+      socket.on('clear', data => {
+        db1.collection('chats', (err, collection) => {
+          if (err) throw err;
+          collection.deleteMany({ meetingId: data.meetingId }, () => {
+            socket.emit('cleared');
           });
+        });
+        db1.collection("participantsList", async (err, collection) => {
+          collection.deleteMany({ roomId: data.meetingId }, () => {
+            console.log("room deleted Successfully");
+          });
+        });
+        db1.collection("privateChats", async (err, collection) => {
+          collection.deleteMany({ meetingId: data.meetingId }, () => {
+          });
+        });
+        socket.to(roomId).emit("meetingClosed", { roomId: roomId });
+      });
       //   });
       // });
 
@@ -150,6 +157,28 @@ mongo.connect('mongodb+srv://mean-video-chat:Sravanthi21@cluster0.inzp0.mongodb.
         var meetingId = msgData.meetingId;
         chat(message, userName, roomId, meetingId);
       });
+      socket.on('privateMessage', (msgData) => {
+        var message = msgData.msg;
+        var fromName = msgData.fromName;
+        var toName = msgData.toName;
+        var meetingId = msgData.meetingId;
+        var toUserId = msgData.toUserId;
+        var fromId = msgData.fromId;
+        var db1 = db.db('VideoChat');
+        db1.collection('privateChats', async (err, collection) => {
+          if (err) throw err;
+          collection.find().toArray(async (err, items) => {
+            if (err) throw err;
+            let res = await collection.insertOne({ fromName: fromName,fromId: fromId, toName: toName,toUserId: toUserId, msg: message, createdAt: new Date(), meetingId: meetingId });
+            if (res) {
+              let items = await collection.find({ $or:[{toUserId: toUserId,meetingId: meetingId}] }).sort({ createdAt: -1 }).toArray();
+              if (items.length > 0) {
+                io.to(toUserId).emit("privateMessage", msgData);
+              }
+            }
+          });
+        });
+      })
       socket.on('disconnect', async () => {
         socket.to(roomId).emit("userDisconnected", { userId: userId, userName: userName });
         db1.collection('participantsList', async (err, collection) => {
