@@ -13,15 +13,11 @@ const EmpSchema = mongoose.Schema({
         type: String,
         required: true
     },
-    isActive:{
-        type:Boolean
-    },
     meetingId: {
         type: String,
     }
-    },
-    {
-        timestamps: true
-    });
+}, {
+    timestamps: true
+});
 
 module.exports = mongoose.model('Emp', EmpSchema);
