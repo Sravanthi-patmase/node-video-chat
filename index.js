@@ -28,7 +28,7 @@ const empRoutes = require('./routes/emp');
 //*********************** */
 
 mongoose.Promise = global.Promise;
-mongoose.connect('mongodb+srv://mean-video-chat:<Sravanthi21>@cluster0.inzp0.mongodb.net/VideoChat?retryWrites=true&w=majority', {
+mongoose.connect('mongodb+srv://mean-video-chat:mongodbmean@cluster0.inzp0.mongodb.net/VideoChat?retryWrites=true&w=majority', {
 useNewUrlParser: true,
 useUnifiedTopology: true 
 }).then(() => {
@@ -64,7 +64,7 @@ app.use((req, res, next) => {
 });
 app.use('/api', empRoutes);
 var roomDetails = "";
-mongo.connect('mongodb+srv://mean-video-chat:<Sravanthi21>@cluster0.inzp0.mongodb.net/VideoChat?retryWrites=true&w=majority',{
+mongo.connect('mongodb+srv://mean-video-chat:mongodbmean@cluster0.inzp0.mongodb.net/VideoChat?retryWrites=true&w=majority',{
     useNewUrlParser: true,
     useUnifiedTopology: true 
   }, function(err, db) {
